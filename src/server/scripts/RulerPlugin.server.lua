@@ -1,11 +1,12 @@
 local midpoint = nil
 local distance = nil
-local adornee = Instance.new("Part")
-local line = Instance.new("LineHandleAdornment")
-local textLabel = Instance.new("TextLabel")
-local billboard = Instance.new("BillboardGui")
+local adornee = nil
+local line = nil
+local textLabel = nil
+local billboard = nil
 
 local UserInputService = game:GetService("UserInputService")
+local Selection = game:GetService("Selection")
 
 local raycastPosition = nil
 local raycastInstance = nil
@@ -17,12 +18,14 @@ local secondSelectedPoint = nil
 
 local function generateViewPortElements()
 	-- Create Reference Part for Line and Billboard
+    adornee = Instance.new("Part")
 	adornee.Name = "referenceAdornee"
 	adornee.Anchored = true
 	adornee.Parent = workspace
 	adornee.Size = Vector3.new(0,0,0)
 	
 	-- Create line adornment
+    line = Instance.new("LineHandleAdornment")
 	line.Name = "rulerLine"
 	line.Parent = workspace
 	line.Color3 = Color3.new(1,1,1)
@@ -32,6 +35,7 @@ local function generateViewPortElements()
 	line.Adornee = adornee
 	
 	-- Create billboard and text label
+    billboard = Instance.new("BillboardGui")
 	billboard.Name = "distanceBillboard"
 	billboard.Parent = workspace
 	billboard.AlwaysOnTop = true
@@ -39,6 +43,7 @@ local function generateViewPortElements()
 	billboard.MaxDistance = 50
 	billboard.Adornee = adornee
 	
+    textLabel = Instance.new("TextLabel")
 	textLabel.Name = "distanceLabel"
 	textLabel.Parent = billboard
 	textLabel.Size = UDim2.new(0,100,0,20)
@@ -101,11 +106,53 @@ local function selectionHandler()
 	end
 end
 
-UserInputService.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		selectionHandler()
+local function posHandlerParts(part)
+	local selectedParts = Selection:Get()
+
+	local function reset()
+		firstSelectedPart = nil
+		secondSelectedPart = nil
+	end
+
+	if #selectedParts == 0 then
+		reset()
+	elseif #selectedParts == 1 then
+		firstSelectedPart = selectedParts[1]
+		secondSelectedPart = nil
+		print(firstSelectedPart)
+	elseif #selectedParts == 2 then
+		firstSelectedPart = selectedParts[1]
+		secondSelectedPart = selectedParts[2]
+		print(firstSelectedPart)
+		print(secondSelectedPart)
 		updateRulerByParts()	
 	end
-end)
+end
 
-generateViewPortElements()
+local toolbar = plugin:CreateToolbar("Ruler")
+local pluginButton = toolbar:CreateButton(
+    "Toggle Ruler",
+    "Enable/Disable Ruler",
+    "rbxassetid://4370186570"
+)
+
+local isActive = false
+local function onActivation()
+    isActive = not isActive
+    local selectionService = game.Selection.SelectionChanged:Connect(posHandlerParts)
+
+    if isActive then
+        print("active", isActive)
+        generateViewPortElements()
+        UserInputService.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                selectionHandler()
+            end
+        end)
+    else
+        selectionService:Disconnect()
+        removeViewPortElements()
+    end
+end
+
+pluginButton.Click:Connect(onActivation)
