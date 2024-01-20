@@ -91,8 +91,6 @@ local function removeViewPortElements()
 	adornee:Destroy()
 	billboard:Destroy()
 	line:Destroy()
-
-	print("Destroyed all GUI Elements")
 end
 
 local function selectionHandler()
@@ -119,12 +117,9 @@ local function posHandlerParts(part)
 	elseif #selectedParts == 1 then
 		firstSelectedPart = selectedParts[1]
 		secondSelectedPart = nil
-		print(firstSelectedPart)
 	elseif #selectedParts == 2 then
 		firstSelectedPart = selectedParts[1]
 		secondSelectedPart = selectedParts[2]
-		print(firstSelectedPart)
-		print(secondSelectedPart)
 		updateRulerByParts()	
 	end
 end
@@ -142,7 +137,6 @@ local function onActivation()
     local selectionService = game.Selection.SelectionChanged:Connect(posHandlerParts)
 
     if isActive then
-        print("active", isActive)
         generateViewPortElements()
         UserInputService.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
