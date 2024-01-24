@@ -9,7 +9,6 @@ local UserInputService = game:GetService("UserInputService")
 local Selection = game:GetService("Selection")
 
 local raycastPosition = nil
-local raycastInstance = nil
 
 local firstSelectedPart = nil
 local secondSelectedPart = nil
@@ -74,13 +73,13 @@ end
 
 local function updateRulerByPoints()
 	-- Calculations
-	midpoint = firstSelectedPoint.Position:Lerp(secondSelectedPoint.Position, 0.5) -- interpolate middle coordinate of both selected parts
+	midpoint = firstSelectedPoint:Lerp(secondSelectedPoint, 0.5) -- interpolate middle coordinate of both selected parts
 	print("Midpoint:"..tostring(midpoint))
-	distance = (firstSelectedPoint.Position - secondSelectedPoint.Position).Magnitude
+	distance = (firstSelectedPoint - secondSelectedPoint).Magnitude
 	print("Distance:"..tostring(distance))
 	
 	-- Set positions of GUI elements
-	adornee.CFrame = CFrame.new(midpoint, firstSelectedPoint.Position) -- Move reference part to midpoint of parts, aswell as make reference part look at part1 (to make sure line is aligned correctly)
+	adornee.CFrame = CFrame.new(midpoint, firstSelectedPoint) -- Move reference part to midpoint of parts, aswell as make reference part look at part1 (to make sure line is aligned correctly)
 	line.Length = distance
 	line.CFrame = CFrame.new(0,0,distance/2) -- Move line CFrame to center of line
 	
@@ -99,9 +98,14 @@ local function selectionHandler()
 	local raycastResult = workspace:Raycast(screenToWorldRay.Origin, screenToWorldRay.Direction * 1000) -- returns what part, face and pos the ray hit
 
 	if raycastResult then -- check if ray hit a part
-			raycastPosition = raycastResult.Position
-			raycastInstance = raycastResult.Instance
-	end
+			raycastPosition = Vector3.new(raycastResult.Position.X, raycastResult.Position.Y, raycastResult.Position.Z)
+            print(raycastPosition)
+            print(raycastResult)
+    else
+        firstSelectedPoint = nil
+        secondSelectedPoint =nil
+        raycastPosition = nil
+    end
 end
 
 local function posHandlerParts(part)
@@ -124,12 +128,28 @@ local function posHandlerParts(part)
 	end
 end
 
+local function posHandlerPoints(pos)
+    if not firstSelectedPoint then
+        firstSelectedPoint = pos
+        print(firstSelectedPoint)
+    elseif not secondSelectedPoint then
+        secondSelectedPoint = pos
+        print(firstSelectedPoint)
+        print(secondSelectedPoint)
+        updateRulerByPoints()
+    else
+        firstSelectedPoint = nil
+        secondSelectedPoint = nil
+    end
+end
+
 local toolbar = plugin:CreateToolbar("Ruler")
 local pluginButton = toolbar:CreateButton(
     "Toggle Ruler",
     "Enable/Disable Ruler",
     "rbxassetid://4370186570"
 )
+
 
 local isActive = false
 local function onActivation()
@@ -141,6 +161,7 @@ local function onActivation()
         UserInputService.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 selectionHandler()
+                selectionService:Disconnect()
             end
         end)
     else
@@ -148,5 +169,24 @@ local function onActivation()
         removeViewPortElements()
     end
 end
+
+
+--[[
+local function onActivation()
+    isActive = not isActive
+
+    if isActive then
+        generateViewPortElements()
+        UserInputService.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                selectionHandler()
+                posHandlerPoints(raycastPosition)
+            end
+        end)
+    else
+        removeViewPortElements()
+    end
+end
+]]--
 
 pluginButton.Click:Connect(onActivation)
